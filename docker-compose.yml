@@ -40,14 +40,17 @@ services:
     # Use the official Nginx image from Docker Hub
     image: nginx:latest
     container_name: nginx-proxy
+
     # Map port 80 on the host to port 80 in the Nginx container.
     # This is now our public entry point.
     ports:
       - "80:80"
       # You would add "443:443" here for HTTPS
+
     volumes:
       # Mount our custom nginx.conf into the container, overwriting the default.
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/default.conf:/etc/nginx/default.conf:ro
+      
     # This ensures the 'streamer' service is started before Nginx starts.
     # Nginx needs the 'streamer' service to be running to proxy requests to it.
     depends_on:
