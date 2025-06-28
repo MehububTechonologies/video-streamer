@@ -13,16 +13,21 @@ services:
     # Map port 8080 on the host to port 8080 in the container
     ports:
       - "${DOCKER_HOST_PORT}:8080"
-        
-    # Define the environment variables for the Node.js application inside the container
-    environment:
-      # This path is *inside* the container and matches the volume mount target below
-      - MEDIA_DIR=/data/media
-      
+
     # Mount a host directory into the container.
     # ${VIDEO_HOST_PATH} will be read from the .env file.
     volumes:
       - "${MEDIA_HOST_PATH}:/data/media"
-      
+
+    # Load environment variables from our production file for the
+    # Node.js app.
+    env_file:
+      - .env
+
+    # Define the environment variables for the Node.js application inside the container
+    environment:
+      # This path is *inside* the container and matches the volume mount target below
+      - MEDIA_DIR=/data/media
+
     # Automatically restart the container if it crashes
     restart: unless-stopped
