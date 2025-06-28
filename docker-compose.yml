@@ -10,9 +10,12 @@ services:
     # Name the resulting container for easy identification
     container_name: media-service
     
+    # REMOVED: No longer exposing the port to the host.
+    # Nginx will be the only public entry point. The 'streamer' service
+    # only needs to be accessible by other services within the Docker network.
     # Map port 8080 on the host to port 8080 in the container
-    ports:
-      - "${DOCKER_HOST_PORT}:8080"
+    # ports:
+    #   - "${DOCKER_HOST_PORT}:8080"
 
     # Mount a host directory into the container.
     # ${VIDEO_HOST_PATH} will be read from the .env file.
@@ -31,3 +34,21 @@ services:
 
     # Automatically restart the container if it crashes
     restart: unless-stopped
+
+  # The Nginx reverse proxy service
+  nginx:
+    # Use the official Nginx image from Docker Hub
+    image: nginx:latest
+    container_name: nginx-proxy
+    # Map port 80 on the host to port 80 in the Nginx container.
+    # This is now our public entry point.
+    ports:
+      - "80:80"
+      # You would add "443:443" here for HTTPS
+    volumes:
+      # Mount our custom nginx.conf into the container, overwriting the default.
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    # This ensures the 'streamer' service is started before Nginx starts.
+    # Nginx needs the 'streamer' service to be running to proxy requests to it.
+    depends_on:
+      - streamer
