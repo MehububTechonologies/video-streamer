@@ -3,6 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+// At the top of app.js
+const jwt = require('jsonwebtoken');
+
+
 
 const app = express();
 
@@ -14,6 +18,33 @@ const MEDIA_DIR = process.env.MEDIA_DIR;
 // --- CORS Configuration ---
 // 2. Read the allowed origins from the .env file
 const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',') : [];
+
+// ... after your other const declarations ...
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('FATAL ERROR: JWT_SECRET is not defined.');
+  process.exit(1);
+}
+
+// Middleware function to protect routes
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).send('Access Denied: No token provided.');
+  }
+
+  try {
+    // Verify the token and check if it's expired
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded; // Optional: pass decoded info to the route
+    next(); // Token is valid, proceed to the route handler
+  } catch (err) {
+    return res.status(403).send('Access Denied: Invalid token.');
+  }
+};
 
 if (allowedOrigins.length === 0) {
     console.warn("WARNING: No CORS_ALLOWED_ORIGINS set. CORS will be disabled.");
@@ -63,7 +94,7 @@ app.get('/videos', (req, res) => {
 
 // Endpoint 2: GET /videos/{filename}
 // Streams the content of the specified video file.
-app.get('/videos/:filename', (req, res) => {
+app.get('/videos/:filename', verifyToken, (req, res) => {
     const { filename } = req.params;
     const videoPath = path.join(MEDIA_DIR, "videos", filename);
 
@@ -132,7 +163,7 @@ app.get('/pdfs', (req, res) => {
 
 // Endpoint 4: GET /pdfs/{filename}
 // Streams the content of the specified PDF file.
-app.get('/pdfs/:filename', (req, res) => {
+app.get('/pdfs/:filename', verifyToken,  (req, res) => {
     const { filename } = req.params;
     const filePath = path.join(MEDIA_DIR, 'pdfs', filename);
 
