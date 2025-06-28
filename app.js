@@ -1,24 +1,30 @@
+require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 // Get the video directory from the environment variable
-const VIDEO_DIR = process.env.VIDEO_DIR;
+const MEDIA_DIR = process.env.MEDIA_DIR;
 
-if (!VIDEO_DIR) {
-    console.error('Error: VIDEO_DIR environment variable is not set.');
+if (!MEDIA_DIR) {
+    console.error('Error: MEDIA_DIR environment variable is not set.');
     process.exit(1);
 }
 
+
+app.get("/", (req, res) => {
+    res.status(200).json({ message: "Server is running, and it's OK"})
+})
 // --- API Endpoints ---
 
 // Endpoint 1: GET /videos
 // Scans the designated video folder and returns a list of video filenames.
 app.get('/videos', (req, res) => {
-    fs.readdir(VIDEO_DIR, (err, files) => {
+    const videosPath = path.join(MEDIA_DIR, 'videos');
+    fs.readdir(videosPath, (err, files) => {
         if (err) {
             console.error(`Error reading video directory: ${err}`);
             return res.status(500).send('Error reading video directory.');
@@ -33,7 +39,7 @@ app.get('/videos', (req, res) => {
 // Streams the content of the specified video file.
 app.get('/videos/:filename', (req, res) => {
     const { filename } = req.params;
-    const videoPath = path.join(VIDEO_DIR, filename);
+    const videoPath = path.join(MEDIA_DIR, "videos", filename);
 
     // Logging the request
     console.log(`Request received for video: ${filename}`);
@@ -57,10 +63,10 @@ app.get('/videos/:filename', (req, res) => {
             const parts = range.replace(/bytes=/, "").split("-");
             const start = parseInt(parts[0], 10);
             const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-            
+
             const chunksize = (end - start) + 1;
             const file = fs.createReadStream(videoPath, { start, end });
-            
+
             const head = {
                 'Content-Range': `bytes ${start}-${end}/${fileSize}`,
                 'Accept-Ranges': 'bytes',
@@ -80,11 +86,58 @@ app.get('/videos/:filename', (req, res) => {
             fs.createReadStream(videoPath).pipe(res);
         }
     });
+})
+
+// --- PDF Endpoints ---
+
+// Endpoint 3: GET /pdfs
+// Scans the designated media folder and returns a list of PDF filenames.
+app.get('/pdfs', (req, res) => {
+    const filePath = path.join(MEDIA_DIR, 'pdfs');
+    fs.readdir(filePath, (err, files) => {
+        if (err) {
+            console.error(`Error reading media directory: ${err}`);
+            return res.status(500).send('Error reading media directory.');
+        }
+
+        const pdfFiles = files.filter(file => file.endsWith('.pdf'));
+        res.json(pdfFiles);
+    });
+});
+
+// Endpoint 4: GET /pdfs/{filename}
+// Streams the content of the specified PDF file.
+app.get('/pdfs/:filename', (req, res) => {
+    const { filename } = req.params;
+    const filePath = path.join(MEDIA_DIR, 'pdfs', filename);
+
+    console.log(`Request received for PDF: ${filename}`);
+
+    fs.stat(filePath, (err, stats) => {
+        if (err) {
+            if (err.code === 'ENOENT') {
+                return res.status(404).send('File not found.');
+            }
+            return res.status(500).send(err.message);
+        }
+
+        const fileSize = stats.size;
+        // The 'Content-Disposition' header suggests how the file should be displayed.
+        // 'inline' suggests opening it in the browser. 'attachment' would suggest downloading.
+        const head = {
+            'Content-Length': fileSize,
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `inline; filename="${filename}"`
+        };
+        res.writeHead(200, head);
+        fs.createReadStream(filePath).pipe(res);
+    });
+
 });
 
 // --- Server Start ---
 
 app.listen(PORT, () => {
     console.log(`Video streaming server is running on port ${PORT}`);
-    console.log(`Serving videos from directory: ${VIDEO_DIR}`);
+    console.log(`Serving videos from directory: ${MEDIA_DIR}`);
 });
