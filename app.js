@@ -1,25 +1,51 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 
 const app = express();
+
 const PORT = process.env.PORT || 8080;
 
 // Get the video directory from the environment variable
 const MEDIA_DIR = process.env.MEDIA_DIR;
+
+// --- CORS Configuration ---
+// 2. Read the allowed origins from the .env file
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',') : [];
+
+if (allowedOrigins.length === 0) {
+    console.warn("WARNING: No CORS_ALLOWED_ORIGINS set. CORS will be disabled.");
+}
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        // The 'origin' is the URL of the site making the request (e.g., http://localhost:3000)
+        // We allow requests if the origin is in our list, or if it's not a browser request (origin is undefined)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true); // Allow the request
+        } else {
+            callback(new Error('Not allowed by CORS')); // Block the request
+        }
+    },
+    optionsSuccessStatus: 200 // For legacy browser support
+};
+app.use(cors(corsOptions));
+
 
 if (!MEDIA_DIR) {
     console.error('Error: MEDIA_DIR environment variable is not set.');
     process.exit(1);
 }
 
-
-app.get("/", (req, res) => {
-    res.status(200).json({ message: "Server is running, and it's OK"})
-})
 // --- API Endpoints ---
 
+app.get("/", (req, res) => {
+    res.status(200).json({ message: "Server is running, and it's OK" })
+})
+
+// --- VIDEO Endpoints ---
 // Endpoint 1: GET /videos
 // Scans the designated video folder and returns a list of video filenames.
 app.get('/videos', (req, res) => {
@@ -89,7 +115,6 @@ app.get('/videos/:filename', (req, res) => {
 })
 
 // --- PDF Endpoints ---
-
 // Endpoint 3: GET /pdfs
 // Scans the designated media folder and returns a list of PDF filenames.
 app.get('/pdfs', (req, res) => {
@@ -136,8 +161,10 @@ app.get('/pdfs/:filename', (req, res) => {
 });
 
 // --- Server Start ---
-
 app.listen(PORT, () => {
     console.log(`Video streaming server is running on port ${PORT}`);
     console.log(`Serving videos from directory: ${MEDIA_DIR}`);
+    if (allowedOrigins.length > 0) {
+        console.log(`CORS is enabled for the following origins: ${allowedOrigins.join(', ')}`);
+    }
 });
