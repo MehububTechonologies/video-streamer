@@ -8,6 +8,7 @@ const path = require('path');
 // --- Import Routes ---
 const videoRoutes = require('./src/routes/videoRoutes');
 const pdfRoutes = require('./src/routes/pdfRoutes');
+const gameRoutes = require('./src/routes/gameRoutes'); 
 
 // --- App & Environment Setup ---
 const app = express();
@@ -44,6 +45,9 @@ app.use('/videos', videoRoutes);
 
 // For any request to /pdfs, use the pdfRoutes module
 app.use('/pdfs', pdfRoutes);
+
+// For any request to /games, use the gameRoutes module
+app.use('/games', gameRoutes);
 
 // --- Server Start ---
 app.listen(PORT, () => {
