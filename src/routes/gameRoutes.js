@@ -24,16 +24,5 @@ router.use('/:gameName', (req, res, next) => {
     express.static(gamePath)(req, res, next);
 });
 
-// If you want to protect the games, you can add the middleware like this.
-// Note that express.static needs to be configured carefully with middleware.
-/*
-const gamesBasePath = path.join(MEDIA_DIR, 'games');
-router.use('/:gameName', verifyToken, (req, res, next) => {
-    const gameName = req.params.gameName;
-    const gamePath = path.join(gamesBasePath, gameName);
-    express.static(gamePath)(req, res, next);
-});
-*/
-
 
 module.exports = router;
