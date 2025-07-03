@@ -87,8 +87,8 @@ exports.listVideosByCategory = (req, res) => {
 
 // Logic to stream a single video file
 exports.streamVideo = (req, res) => {
-    const { filename } = req.params;
-    const videoPath = path.join(MEDIA_DIR, "videos", filename);
+    const { activity, category, filename } = req.params;
+    const videoPath = path.join(MEDIA_DIR, "videos", activity, category, filename);
     console.log(`Request received for video: ${filename}`);
 
     fs.stat(videoPath, (err, stats) => {
