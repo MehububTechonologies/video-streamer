@@ -35,7 +35,7 @@ exports.listVideos = (req, res) => {
             return res.status(500).send('Error reading video directory.');
         }
         const videoFiles = files.filter(file => file.endsWith('.mp4'));
-        res.json(videoFiles);
+        res.json(files);
     });
 };
 
