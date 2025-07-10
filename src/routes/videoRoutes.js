@@ -15,7 +15,8 @@ router.get('/:activity/:category', videoController.listVideosByCategory);
 // GET /videos/:activity/:category/:filename -> Streams a specific video file
 // This is the main endpoint for playing a video.
 // Add 'verifyToken' middleware here if you want to protect it.
-router.get('/:activity/:category/:filename', videoController.streamVideo);
+router.get('/:activity/:category/:filename(*)', videoController.streamVideo);
+
 // protected route:
 // router.get('/:activity/:category/:filename', verifyToken, videoController.streamVideo);
 
